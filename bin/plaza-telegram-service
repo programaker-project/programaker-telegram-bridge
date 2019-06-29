@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+
+from plaza_telegram_service import TelegramBot
+from plaza_telegram_service import TelegramService
+from plaza_telegram_service import config
+from plaza_telegram_service.storage import sqlite_storage
+import logging
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+                        format='%(levelname)-8s %(message)s')
+
+    bot_token = config.get_bot_token()
+    bot_name = config.get_bot_name()
+    bridge_endpoint = config.get_bridge_endpoint()
+
+    telegram = TelegramBot(bot_token, bot_name)
+    service = TelegramService(
+        bot=telegram,
+        storage=sqlite_storage.get_default(),
+        bridge_endpoint=bridge_endpoint)
+    service.run()

@@ -1,0 +1,8 @@
+# Plaza
+git+https://gitlab.com/plaza-project/bridges/python-plaza-lib
+
+# Telegram
+python-telegram-bot
+
+# XDG
+xdg
