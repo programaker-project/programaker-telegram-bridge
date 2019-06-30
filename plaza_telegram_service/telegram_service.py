@@ -9,7 +9,7 @@ from plaza_service import (
     BlockArgument, DynamicBlockArgument, VariableBlockArgument,
     BlockType, BlockContext,
 )
-
+from . import config
 
 class Registerer(MessageBasedServiceRegistration):
     def __init__(self, bot, *args, **kwargs):
@@ -37,6 +37,41 @@ class TelegramService(PlazaService):
         self.registerer = Registerer(self.bot, self)
         self.bot.start()
 
+    def on_new_message(self, update):
+        if 'message' not in dir(update):
+            return
+
+        user = update.message.from_user.id
+        room = update.message.chat.id
+        if not self.storage.is_telegram_user_registered(user):
+            self._on_non_registered_event(user, room, update)
+        else:
+            PlazaService.emit_event_sync(
+                self,
+                to_user=self.storage.get_plaza_user_from_telegram(
+                    user),
+                key="on_new_message",
+                content=update.message.text,
+                event=update.to_dict())
+            self.last_message = (room, update)
+
+    def _on_non_registered_event(self, user, room, update):
+        if 'text' not in dir(update.message):
+            return
+
+        msg = update.message.text
+        prefix = '/register '
+        if msg.startswith(prefix):
+            register_id = msg[len(prefix):]
+            self.storage.register_user(user, register_id)
+            self.bot.send(room,
+                          "Welcome! You're registered!\n"
+                          "Now you can use this bot in your programs.")
+        else:
+            self.bot.send(room,
+                          "Hi! I'm a bot in the making, ask @{maintainer} for more info if you want to know how to program me ;)."
+                          .format(maintainer=config.get_maintainer_telegram_handle()))
+
     async def handle_data_callback(self, callback_name, extra_data):
         logging.info("GET {} # {}".format(
             callback_name, extra_data.user_id))
@@ -58,5 +93,14 @@ class TelegramService(PlazaService):
             is_public=True,
             registration=self.registerer,
             blocks=[
+                ServiceTriggerBlock(
+                    id="on_new_message",
+                    function_name="on_new_message",
+                    message="When received any message. Set %1",
+                    arguments=[
+                        VariableBlockArgument(),
+                    ],
+                    save_to=BlockContext.ARGUMENTS[0],
+                ),
             ],
         )

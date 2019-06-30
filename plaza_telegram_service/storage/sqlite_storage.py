@@ -92,7 +92,7 @@ class SqliteStorage:
             JOIN PLAZA_USERS_IN_TELEGRAM as puit
             ON puit.plaza_id = p.id
             JOIN TELEGRAM_USERS as t
-            ON puit.telegram_id = m.id
+            ON puit.telegram_id = t.id
             WHERE t.telegram_user_id=?
             ;
             ''', (user_id,))
@@ -165,9 +165,9 @@ class SqliteStorage:
             plaza_id = self._get_or_add_plaza_user(c, plaza_user)
             c.execute('''
             SELECT telegram_user_id
-            FROM TELEGRAM_USERS m
+            FROM TELEGRAM_USERS t
             JOIN PLAZA_USERS_IN_TELEGRAM pim
-            ON m.id=pim.telegram_id
+            ON t.id=pim.telegram_id
             WHERE pim.plaza_id=?
             ;
             ''', (plaza_id,))

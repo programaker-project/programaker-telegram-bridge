@@ -6,6 +6,8 @@ from xdg import XDG_CONFIG_HOME
 TELEGRAM_BOT_TOKEN_ENV = 'TELEGRAM_BOT_TOKEN'
 TELEGRAM_BOT_NAME_ENV = 'TELEGRAM_BOT_NAME'
 PLAZA_BRIDGE_ENDPOINT_ENV = 'PLAZA_BRIDGE_ENDPOINT'
+MAINTAINER_TELEGRAM_HANDLE_ENV = 'MAINTAINER_TELEGRAM_HANDLE'
+DEFAULT_MAINTAINER_TELEGRAM_HANDLE = 'kenkeiras'
 
 TELEGRAM_BOT_TOKEN_INDEX = 'telegram_bot_token'
 TELEGRAM_BOT_NAME_INDEX = 'telegram_bot_name'
@@ -75,3 +77,7 @@ def get_bridge_endpoint():
             raise Exception('No bridge endpoint introduced')
         _save_config(config)
     return config[PLAZA_BRIDGE_ENDPOINT_INDEX]
+
+
+def get_maintainer_telegram_handle():
+    return os.getenv(MAINTAINER_TELEGRAM_HANDLE_ENV, DEFAULT_MAINTAINER_TELEGRAM_HANDLE)
