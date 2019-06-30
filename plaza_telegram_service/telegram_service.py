@@ -30,6 +30,7 @@ class TelegramService(PlazaService):
         PlazaService.__init__(self, bridge_endpoint)
         self.storage = storage
         self.SUPPORTED_FUNCTIONS = {
+            "send_message": self.send_message,
         }
         self.bot = bot
         self.bot.handler = self
@@ -37,15 +38,30 @@ class TelegramService(PlazaService):
         self.registerer = Registerer(self.bot, self)
         self.bot.start()
 
+    def get_chat_name(self, chat):
+        if chat.title is not None:
+            return chat.title
+        if chat.username is not None:
+            return chat.username
+        logging.error("Unknown chat name from: {}".format(chat))
+        return "chat-{}".format(chat.id)
+
     def on_new_message(self, update):
-        if 'message' not in dir(update):
+        if update.message is None:
             return
 
         user = update.message.from_user.id
         room = update.message.chat.id
+
+        # Route the message depending on if the user is already registered
         if not self.storage.is_telegram_user_registered(user):
             self._on_non_registered_event(user, room, update)
         else:
+            # If the user is registered, allow it to send messages to this chat
+            chat_name = self.get_chat_name(update.message.chat)
+            self.storage.add_user_to_room(user, room, room_name=chat_name)
+
+            # And send the event about this message reception
             PlazaService.emit_event_sync(
                 self,
                 to_user=self.storage.get_plaza_user_from_telegram(
@@ -53,10 +69,9 @@ class TelegramService(PlazaService):
                 key="on_new_message",
                 content=update.message.text,
                 event=update.to_dict())
-            self.last_message = (room, update)
 
     def _on_non_registered_event(self, user, room, update):
-        if 'text' not in dir(update.message):
+        if update.message.text is None:
             return
 
         msg = update.message.text
@@ -75,12 +90,16 @@ class TelegramService(PlazaService):
     async def handle_data_callback(self, callback_name, extra_data):
         logging.info("GET {} # {}".format(
             callback_name, extra_data.user_id))
+
         results = {}
-        for user in self.storage.get_telegram_users(extra_data.user_id):
-            for room in self.members[user]:
-                results[room.room_id] = {"name": room.display_name}
+        for (_telegram_user, telegram_room_id, telegram_room_name) in (
+                self.storage.get_telegram_rooms_for_plaza_user(extra_data.user_id)):
+            results[telegram_room_id] = {"name": telegram_room_name}
 
         return results
+
+    async def send_message(self, extra_data, room_id, message):
+        self.bot.send(room_id, message)
 
     async def handle_call(self, function_name, arguments, extra_data):
         logging.info("{}({}) # {}".format(
@@ -93,6 +112,17 @@ class TelegramService(PlazaService):
             is_public=True,
             registration=self.registerer,
             blocks=[
+                ServiceBlock(
+                    id="send_message",
+                    function_name="send_message",
+                    message="On channel %1 say %2",
+                    arguments=[
+                        DynamicBlockArgument(str, "get_available_channels"),
+                        BlockArgument(str, "Hello"),
+                    ],
+                    block_type=BlockType.OPERATION,
+                    block_result_type=None,
+                ),
                 ServiceTriggerBlock(
                     id="on_new_message",
                     function_name="on_new_message",

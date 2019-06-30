@@ -50,6 +50,24 @@ class SqliteStorage:
             ''')
 
             c.execute('''
+            CREATE TABLE IF NOT EXISTS TELEGRAM_ROOMS (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_room_id VARCHAR(256) UNIQUE,
+                room_name text
+            );
+            ''')
+
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS TELEGRAM_USERS_IN_ROOMS (
+                telegram_id INTEGER,
+                room_id INTEGER,
+                UNIQUE(telegram_id, room_id),
+                FOREIGN KEY(telegram_id) REFERENCES TELEGRAM_USERS(id),
+                FOREIGN KEY(room_id) REFERENCES TELEGRAM_ROOMS(id)
+            );
+            ''')
+
+            c.execute('''
             CREATE TABLE IF NOT EXISTS PLAZA_USERS (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 plaza_user_id VARCHAR(36) UNIQUE
@@ -125,6 +143,27 @@ class SqliteStorage:
                 'Integrity error, query by UNIQUE returned multiple values: {}'
                 .format(cursor.rowcount))
 
+    def _get_or_add_telegram_room(self, cursor, telegram_room, room_name):
+        cursor.execute('''
+        SELECT id
+        FROM TELEGRAM_ROOMS
+        WHERE telegram_room_id=?
+        ;
+        ''', (telegram_room,))
+
+        results = cursor.fetchall()
+        if len(results) == 0:  # New user
+            cursor.execute('''
+            INSERT INTO TELEGRAM_ROOMS (telegram_room_id, room_name) VALUES(?, ?);
+            ''', (telegram_room, room_name))
+            return cursor.lastrowid
+        elif len(results) == 1:  # Existing user
+            return results[0][0]
+        else:  # This shouldn't happen
+            raise Exception(
+                'Integrity error, query by UNIQUE returned multiple values: {}'
+                .format(cursor.rowcount))
+
     def _get_or_add_plaza_user(self, cursor, plaza_user):
         cursor.execute('''
         SELECT id
@@ -159,6 +198,19 @@ class SqliteStorage:
             c.close()
             db.commit()
 
+    def add_user_to_room(self, telegram_user, telegram_room, room_name):
+        with self._open_db() as db:
+            c = db.cursor()
+            telegram_id = self._get_or_add_telegram_user(c, telegram_user)
+            room_id = self._get_or_add_telegram_room(c, telegram_room, room_name)
+            c.execute('''
+            INSERT OR REPLACE INTO
+            TELEGRAM_USERS_IN_ROOMS (telegram_id, room_id)
+            VALUES (?, ?)
+            ''', (telegram_id, room_id))
+            c.close()
+            db.commit()
+
     def get_telegram_users(self, plaza_user):
         with self._open_db() as db:
             c = db.cursor()
@@ -166,15 +218,34 @@ class SqliteStorage:
             c.execute('''
             SELECT telegram_user_id
             FROM TELEGRAM_USERS t
-            JOIN PLAZA_USERS_IN_TELEGRAM pim
-            ON t.id=pim.telegram_id
-            WHERE pim.plaza_id=?
+            JOIN PLAZA_USERS_IN_TELEGRAM p_in_t
+            ON t.id=p_in_t.telegram_id
+            WHERE p_in_t.plaza_id=?
             ;
             ''', (plaza_id,))
             results = c.fetchall()
             c.close()
             return [row[0] for row in results]
 
+    def get_telegram_rooms_for_plaza_user(self, plaza_user):
+        with self._open_db() as db:
+            c = db.cursor()
+            plaza_id = self._get_or_add_plaza_user(c, plaza_user)
+            c.execute('''
+            SELECT t_users.telegram_user_id, t_rooms.telegram_room_id, t_rooms.room_name
+            FROM TELEGRAM_USERS t_users
+            JOIN PLAZA_USERS_IN_TELEGRAM p_in_t
+            ON t_users.id=p_in_t.telegram_id
+            JOIN TELEGRAM_USERS_IN_ROOMS tu_in_rooms
+            on t_users.id=tu_in_rooms.telegram_id
+            JOIN TELEGRAM_ROOMS t_rooms
+            on tu_in_rooms.room_id=t_rooms.id
+            WHERE p_in_t.plaza_id=?
+            ;
+            ''', (plaza_id,))
+            results = c.fetchall()
+            c.close()
+            return results
 
 def get_default():
     return SqliteStorage(DEFAULT_PATH)
