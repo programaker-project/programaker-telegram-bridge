@@ -102,5 +102,15 @@ class TelegramService(PlazaService):
                     ],
                     save_to=BlockContext.ARGUMENTS[0],
                 ),
+                ServiceTriggerBlock(
+                    id="on_command",
+                    function_name="on_command",
+                    message="When received %1",
+                    arguments=[
+                        BlockArgument(str, "/start"),
+                    ],
+                    expected_value=BlockContext.ARGUMENTS[0],
+                    key="on_new_message",
+                ),
             ],
         )
