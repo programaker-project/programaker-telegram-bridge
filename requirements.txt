@@ -2,7 +2,10 @@
 git+https://gitlab.com/plaza-project/bridges/python-plaza-lib
 
 # Telegram
-python-telegram-bot
+# python-telegram-bot
+# Fixes a timeout bug on telegram/utils/request.py#L327
+#  on the pip version `**urlopen_args` is not set
+git+https://github.com/python-telegram-bot/python-telegram-bot
 
 # XDG
 xdg
