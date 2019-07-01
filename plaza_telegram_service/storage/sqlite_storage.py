@@ -2,8 +2,13 @@ import os
 import sqlite3
 from xdg import XDG_DATA_HOME
 
-DATA_DIRECTORY = os.path.join(XDG_DATA_HOME, 'plaza', 'bridges', 'telegram')
-DEFAULT_PATH = os.path.join(DATA_DIRECTORY, 'db.sqlite3')
+DB_PATH_ENV = 'PLAZA_TELEGRAM_BRIDGE_DB_PATH'
+if os.getenv(DB_PATH_ENV, None) is None:
+    DATA_DIRECTORY = os.path.join(XDG_DATA_HOME, 'plaza', 'bridges', 'telegram')
+    DEFAULT_PATH = os.path.join(DATA_DIRECTORY, 'db.sqlite3')
+else:
+    DEFAULT_PATH = os.getenv(DB_PATH_ENV)
+    DATA_DIRECTORY = os.path.dirname(DEFAULT_PATH)
 
 
 class DBContext:
