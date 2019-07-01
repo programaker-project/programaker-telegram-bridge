@@ -31,12 +31,14 @@ class TelegramService(PlazaService):
         self.storage = storage
         self.SUPPORTED_FUNCTIONS = {
             "send_message": self.send_message,
+            "answer_message": self.answer_message,
         }
         self.bot = bot
         self.bot.handler = self
         self.message_received_event = asyncio.Event()
         self.registerer = Registerer(self.bot, self)
         self.bot.start()
+
 
     def get_chat_name(self, chat):
         if chat.title is not None:
@@ -45,6 +47,7 @@ class TelegramService(PlazaService):
             return chat.username
         logging.error("Unknown chat name from: {}".format(chat))
         return "chat-{}".format(chat.id)
+
 
     def on_new_message(self, update):
         if update.message is None:
@@ -70,6 +73,7 @@ class TelegramService(PlazaService):
                 content=update.message.text,
                 event=update.to_dict())
 
+
     def _on_non_registered_event(self, user, room, update):
         if update.message.text is None:
             return
@@ -87,6 +91,7 @@ class TelegramService(PlazaService):
                           "Hi! I'm a bot in the making, ask @{maintainer} for more info if you want to know how to program me ;)."
                           .format(maintainer=config.get_maintainer_telegram_handle()))
 
+
     async def handle_data_callback(self, callback_name, extra_data):
         logging.info("GET {} # {}".format(
             callback_name, extra_data.user_id))
@@ -98,13 +103,34 @@ class TelegramService(PlazaService):
 
         return results
 
+
     async def send_message(self, extra_data, room_id, message):
         self.bot.send(room_id, message)
+
+
+    async def answer_message(self, extra_data, message):
+        if extra_data.last_monitor_value is None:
+            logging.error("Answer_message without previous call")
+            return
+
+        last_room_id = (extra_data
+                        .last_monitor_value
+                        .get("message", {})
+                        .get("chat", {})
+                        .get("id", None))
+        if last_room_id is None:
+            logging.error("Cannot call answer_message when last_messate is “{}”"
+                          .format(extra_data.last_monitor_value))
+            return
+
+        self.bot.send(last_room_id, message)
+
 
     async def handle_call(self, function_name, arguments, extra_data):
         logging.info("{}({}) # {}".format(
             function_name, ", ".join(arguments), extra_data.user_id))
         return await self.SUPPORTED_FUNCTIONS[function_name](extra_data, *arguments)
+
 
     def handle_configuration(self):
         return ServiceConfiguration(
@@ -118,6 +144,16 @@ class TelegramService(PlazaService):
                     message="On channel %1 say %2",
                     arguments=[
                         DynamicBlockArgument(str, "get_available_channels"),
+                        BlockArgument(str, "Hello"),
+                    ],
+                    block_type=BlockType.OPERATION,
+                    block_result_type=None,
+                ),
+                ServiceBlock(
+                    id="answer_message",
+                    function_name="answer_message",
+                    message="Respond %1",
+                    arguments=[
                         BlockArgument(str, "Hello"),
                     ],
                     block_type=BlockType.OPERATION,
