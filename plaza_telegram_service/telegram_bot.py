@@ -43,7 +43,6 @@ class TelegramBot:
         self.bot_name = bot_name
 
         self.on_message = None
-        self.handler = None
         self.bot = Bot(token=bot_token)
         self.thread = BotRunnerThread(self.bot, self.on_update)
 
@@ -55,10 +54,10 @@ class TelegramBot:
 
     def on_update(self, update):
         logging.info("Update: {}".format(update))
-        if self.handler is None:
+        if self.on_message is None:
             return
 
-        self.handler.on_new_message(update)
+        self.on_message(update)
 
     def on_exception(self, exception):
         logging.error(repr(exception))
