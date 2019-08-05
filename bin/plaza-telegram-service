@@ -43,8 +43,8 @@ BOT = TelegramBot(bot_token, bot_name)
 STORAGE = sqlite_storage.get_default()
 
 bridge = PlazaBridge(
-    name="Telegram - test",
-    # is_public=True,  # False by default
+    name="Telegram",
+    is_public=True,
     registerer=Registerer(BOT),
     events=["on_new_message"],
 )
@@ -136,7 +136,7 @@ def on_non_registered_event(user, room, update):
 
 
 @bridge.operation(
-    message="O - On channel %1 say %2",
+    message="On channel %1 say %2",
     arguments=[
         CallbackBlockArgument(str, get_known_channels),
         BlockArgument(str, "Hello"),
@@ -146,7 +146,7 @@ def send_message(room_id, message, extra_data):
     BOT.send(room_id, message)
 
 
-@bridge.operation(message="O - Respond %1", arguments=[BlockArgument(str, "Hello")])
+@bridge.operation(message="Respond %1", arguments=[BlockArgument(str, "Hello")])
 def answer_message(message, extra_data):
     if extra_data.last_monitor_value is None:
         logging.error("Answer_message without previous call")
