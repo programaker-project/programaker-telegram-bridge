@@ -1,6 +1,6 @@
 # Plaza
 # Pinning a commit is only temporary, and won't be allowed on master
-git+https://gitlab.com/plaza-project/bridges/python-plaza-lib@259a3f5edb662f1d7ff5f29dcc628abe76f8038f
+git+https://gitlab.com/plaza-project/bridges/python-plaza-lib@0188d655ba2828d417a29b0b74e5de74f9a0a59d
 
 # Telegram
 # python-telegram-bot
