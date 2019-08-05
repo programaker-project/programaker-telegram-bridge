@@ -8,14 +8,10 @@ import sys
 
 from plaza_bridge import PlazaBridge
 from plaza_bridge.legacy import (
-    ServiceConfiguration,
     MessageBasedServiceRegistration,
-    ServiceBlock,
-    ServiceTriggerBlock,
     BlockArgument,
     CallbackBlockArgument,
     VariableBlockArgument,
-    BlockType,
     BlockContext,
 )
 
@@ -50,9 +46,25 @@ bridge = PlazaBridge(
     name="Telegram - test",
     # is_public=True,  # False by default
     registerer=Registerer(BOT),
+    events=["on_new_message"],
 )
 
+# Define events
+on_new_message_event = bridge.events.on_new_message
+on_new_message_event.add_trigger_block(
+    id="on_new_message",
+    message="When received any message. Set %1",
+    arguments=[VariableBlockArgument()],
+    save_to=BlockContext.ARGUMENTS[0],
+)
+on_new_message_event.add_trigger_block(
+    id="on_command",
+    message="When received %1",
+    arguments=[BlockArgument(str, "/start")],
+    expected_value=BlockContext.ARGUMENTS[0],
+)
 
+# Define helper function
 def get_chat_name(chat):
     if chat.title is not None:
         return chat.title
@@ -60,35 +72,6 @@ def get_chat_name(chat):
         return chat.username
     logging.error("Unknown chat name from: {}".format(chat))
     return "chat-{}".format(chat.id)
-
-
-## TODO: Send signal
-# return ServiceConfiguration(
-#     service_name="Telegram",
-#     is_public=True,
-#     registration=self.registerer,
-#     blocks=[
-#         ServiceTriggerBlock(
-#             id="on_new_message",
-#             function_name="on_new_message",
-#             message="When received any message. Set %1",
-#             arguments=[
-#                 VariableBlockArgument(),
-#             ],
-#             save_to=BlockContext.ARGUMENTS[0],
-#         ),
-#         ServiceTriggerBlock(
-#             id="on_command",
-#             function_name="on_command",
-#             message="When received %1",
-#             arguments=[
-#                 BlockArgument(str, "/start"),
-#             ],
-#             expected_value=BlockContext.ARGUMENTS[0],
-#             key="on_new_message",
-#         ),
-#     ],
-# )
 
 
 @bridge.callback
@@ -118,14 +101,14 @@ def on_new_message(update):
         chat_name = get_chat_name(update.message.chat)
         STORAGE.add_user_to_room(user, room, room_name=chat_name)
 
-        # And send the event about this message reception
-        # PlazaBridge.emit_event_sync(
-        #     self,
-        #     to_user=self.storage.get_plaza_user_from_telegram(user),
-        #     key="on_new_message",
-        #     content=update.message.text,
-        #     event=update.to_dict(),
-        # )
+        # And send the event notifying this message's reception
+        on_new_message_event.send(
+            to_user=STORAGE.get_plaza_user_from_telegram(user),
+            content=update.message.text,
+            event=update.to_dict(),
+        )
+
+
 BOT.on_message = on_new_message
 
 
