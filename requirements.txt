@@ -1,12 +1,11 @@
 # Plaza
-# Pinning a commit is only temporary, and won't be allowed on master
-git+https://gitlab.com/plaza-project/bridges/python-plaza-lib@0188d655ba2828d417a29b0b74e5de74f9a0a59d
+plaza-bridge
 
 # Telegram
 # python-telegram-bot
 # Fixes a timeout bug on telegram/utils/request.py#L327
-#  on the pip version `**urlopen_args` is not set
-git+https://github.com/python-telegram-bot/python-telegram-bot
+#  on the 11 version `**urlopen_args` is not set
+python-telegram-bot==12.0.0b1
 
 # XDG
 xdg

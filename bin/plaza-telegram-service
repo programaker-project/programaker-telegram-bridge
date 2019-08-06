@@ -6,13 +6,13 @@ from plaza_telegram_service.storage import sqlite_storage
 import logging
 import sys
 
-from plaza_bridge import PlazaBridge
-from plaza_bridge.legacy import (
+from plaza_bridge import (
+    PlazaBridge,
     MessageBasedServiceRegistration,
+    BlockContext,
     BlockArgument,
     CallbackBlockArgument,
     VariableBlockArgument,
-    BlockContext,
 )
 
 

@@ -10,8 +10,8 @@ setup(name='plaza-telegram-service',
       scripts=['bin/plaza-telegram-service'],
       include_package_data=True,
       install_requires=[
-          'python-telegram-bot',
-          'plaza-service',
+          'python-telegram-bot==12.0.0b1',
+          'plaza-bridge',
           'xdg',
       ],
       zip_safe=False)
