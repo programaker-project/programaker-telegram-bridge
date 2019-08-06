@@ -14,5 +14,5 @@ build_and_push:
     - docker tag $DOCKER_IMAGE "$CI_REGISTRY"/plaza-project/bridges/telegram-bridge:$CI_COMMIT_SHA
     - docker push  "$CI_REGISTRY"/plaza-project/bridges/telegram-bridge:$CI_COMMIT_SHA
   only:
-    - future
+    - develop
     - master
