@@ -136,6 +136,7 @@ def on_non_registered_event(user, room, update):
 
 
 @bridge.operation(
+    id="send_message",
     message="On channel %1 say %2",
     arguments=[
         CallbackBlockArgument(str, get_known_channels),
@@ -146,7 +147,9 @@ def send_message(room_id, message, extra_data):
     BOT.send(room_id, message)
 
 
-@bridge.operation(message="Respond %1", arguments=[BlockArgument(str, "Hello")])
+@bridge.operation(
+    id="answer_message", message="Respond %1", arguments=[BlockArgument(str, "Hello")]
+)
 def answer_message(message, extra_data):
     if extra_data.last_monitor_value is None:
         logging.error("Answer_message without previous call")
