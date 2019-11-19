@@ -4,7 +4,8 @@ from plaza_telegram_service import TelegramBot
 from plaza_telegram_service import config
 from plaza_telegram_service.storage import sqlite_storage
 import logging
-import sys
+import os
+import traceback
 
 from plaza_bridge import (
     PlazaBridge,
@@ -175,4 +176,10 @@ if __name__ == "__main__":
 
     bridge.endpoint = config.get_bridge_endpoint()
     BOT.start()
-    bridge.run()
+    try:
+        bridge.run()
+    except:
+        traceback.print_exc()
+        os._exit(1)
+
+    os._exit(0)  # Force stopping after the bridge ends
