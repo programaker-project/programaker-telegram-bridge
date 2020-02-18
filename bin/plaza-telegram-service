@@ -120,6 +120,10 @@ def on_non_registered_event(user, room, update):
     if msg.startswith(prefix):
         register_id = msg[len(prefix) :]
         STORAGE.register_user(user, register_id)
+
+        chat_name = get_chat_name(update.message.chat)
+        STORAGE.add_user_to_room(user, room, room_name=chat_name)
+
         BOT.send(
             room,
             "Welcome! You're registered!\n"
