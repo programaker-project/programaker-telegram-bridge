@@ -7,12 +7,12 @@ metadata = MetaData()
 TelegramUsers = Table(
     'TELEGRAM_USERS', metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('telegram_user_id', String(256)))
+    Column('telegram_user_id', Integer))
 
 TelegramRooms = Table(
     'TELEGRAM_ROOMS', metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('telegram_room_id', String(256), unique=True),
+    Column('telegram_room_id', Integer, unique=True),
     Column('room_name', Text))
 
 TelegramUsersInRooms = Table(
