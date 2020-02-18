@@ -2,10 +2,13 @@
 plaza-bridge
 
 # Telegram
-# python-telegram-bot
-# Fixes a timeout bug on telegram/utils/request.py#L327
-#  on the 11 version `**urlopen_args` is not set
-python-telegram-bot==12.0.0b1
+python-telegram-bot
+
+# SQLAlchemy
+SQLAlchemy
+
+# Postgres support
+psycopg2-binary
 
 # XDG
 xdg

@@ -2,7 +2,7 @@
 
 from plaza_telegram_service import TelegramBot
 from plaza_telegram_service import config
-from plaza_telegram_service.storage import sqlite_storage
+from plaza_telegram_service import storage
 import logging
 import os
 import traceback
@@ -35,13 +35,11 @@ class Registerer(MessageBasedServiceRegistration):
         )
 
 
-STORAGE = sqlite_storage.get_default()
-
 bot_token = config.get_bot_token()
 bot_name = config.get_bot_name()
 
 BOT = TelegramBot(bot_token, bot_name)
-STORAGE = sqlite_storage.get_default()
+STORAGE = storage.get_engine()
 
 bridge = PlazaBridge(
     name="Telegram",
