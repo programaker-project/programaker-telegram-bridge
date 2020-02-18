@@ -177,7 +177,7 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
 
     bridge.endpoint = config.get_bridge_endpoint()
-    BOT.start()
+    bridge.on_ready = BOT.start
     try:
         bridge.run()
     except:
