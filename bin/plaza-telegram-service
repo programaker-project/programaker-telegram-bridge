@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-from plaza_telegram_service import TelegramBot
-from plaza_telegram_service import config
-from plaza_telegram_service import storage
+from plaza_telegram_service import (
+    TelegramBot,
+    config,
+    storage,
+    assets,
+)
 import logging
 import os
 import traceback
@@ -63,6 +66,7 @@ bridge = PlazaBridge(
     name="Telegram",
     is_public=True,
     events=["on_new_message"],
+    icon=assets.open_icon(),
 )
 
 REGISTERER = Registerer(bot=BOT, bridge=bridge)
