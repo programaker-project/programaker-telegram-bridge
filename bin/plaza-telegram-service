@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-from plaza_telegram_service import TelegramBot
-from plaza_telegram_service import config
-from plaza_telegram_service import storage
+from plaza_telegram_service import (
+    TelegramBot,
+    config,
+    storage,
+    assets,
+)
 import logging
 import os
 import traceback
@@ -18,21 +21,39 @@ from plaza_bridge import (
 
 
 class Registerer(MessageBasedServiceRegistration):
-    def __init__(self, bot, *args, **kwargs):
+    def __init__(self, bot, bridge, *args, **kwargs):
         MessageBasedServiceRegistration.__init__(self, *args, **kwargs)
         self.bot = bot
+        self.connection_strings = {}
+        self.bridge = bridge
+
 
     def get_call_to_action_text(self, extra_data):
         if not extra_data:
             return 'Just greet <a href="https://telegram.me/{bot_name}">{bot_name}</a>'.format(
                 bot_name=self.bot.bot_name
             )
+
+
+        connection_id = extra_data.user_id
+        self.connection_strings[connection_id] = connection_id
+
         return (
             'Send the following to <a href="https://telegram.me/{bot_name}">{bot_name}</a>'
             "<console>/register {user_id}</console>".format(
-                bot_name=self.bot.bot_name, user_id=extra_data.user_id
+                bot_name=self.bot.bot_name, user_id=connection_id,
             )
         )
+
+    def perform_side_authentication(self, keyword, username):
+        if not keyword in self.connection_strings:
+            return False
+
+        connection_id = self.connection_strings[keyword]
+        del self.connection_strings[keyword]
+
+        self.bridge.establish_connection(connection_id, name=username)
+        return True
 
 
 bot_token = config.get_bot_token()
@@ -44,9 +65,13 @@ STORAGE = storage.get_engine()
 bridge = PlazaBridge(
     name="Telegram",
     is_public=True,
-    registerer=Registerer(BOT),
     events=["on_new_message"],
+    icon=assets.open_icon(),
+    allow_multiple_connections=False,
 )
+
+REGISTERER = Registerer(bot=BOT, bridge=bridge)
+bridge.registerer = REGISTERER
 
 # Define events
 on_new_message_event = bridge.events.on_new_message
@@ -92,6 +117,16 @@ def on_new_message(update):
     user = update.message.from_user.id
     room = update.message.chat.id
 
+    # Check for registration
+    if check_message_for_registration(update, user, room):
+        chat_name = get_chat_name(update.message.chat)
+        STORAGE.add_user_to_room(user, room, room_name=chat_name)
+        BOT.send(
+            room,
+            "Welcome! You're registered now!\n"
+            "Now you can use this bot in PrograMaker.",
+        )
+
     # Route the message depending on if the user is already registered
     if not STORAGE.is_telegram_user_registered(user):
         on_non_registered_event(user, room, update)
@@ -101,41 +136,40 @@ def on_new_message(update):
         STORAGE.add_user_to_room(user, room, room_name=chat_name)
 
         # And send the event notifying this message's reception
-        on_new_message_event.send(
-            to_user=STORAGE.get_plaza_user_from_telegram(user),
-            content=update.message.text,
-            event=update.to_dict(),
-        )
+        for plaza_user in STORAGE.get_plaza_users_from_telegram(user):
+            on_new_message_event.send(
+                to_user=plaza_user,
+                content=update.message.text,
+                event=update.to_dict(),
+            )
 
 
 BOT.on_message = on_new_message
+
+
+def check_message_for_registration(update, user, room):
+    msg = update.message.text
+
+    prefix = "/register "
+    if msg.startswith(prefix):
+        register_id = msg[len(prefix):]
+        if REGISTERER.perform_side_authentication(register_id, update.message.from_user.name):
+            STORAGE.register_user(user, register_id)
+            return True
+
+    return False
 
 
 def on_non_registered_event(user, room, update):
     if update.message.text is None:
         return
 
-    msg = update.message.text
-    prefix = "/register "
-    if msg.startswith(prefix):
-        register_id = msg[len(prefix) :]
-        STORAGE.register_user(user, register_id)
-
-        chat_name = get_chat_name(update.message.chat)
-        STORAGE.add_user_to_room(user, room, room_name=chat_name)
-
-        BOT.send(
-            room,
-            "Welcome! You're registered!\n"
-            "Now you can use this bot in your programs.",
-        )
-    else:
-        BOT.send(
-            room,
-            "Hi! I'm a bot in the making, ask @{maintainer} for more info if you want to know how to program me ;).".format(
-                maintainer=config.get_maintainer_telegram_handle()
-            ),
-        )
+    BOT.send(
+        room,
+        "Hi! I'm a bot in the making, ask @{maintainer} for more info if you want to know how to program me ;).".format(
+            maintainer=config.get_maintainer_telegram_handle()
+        ),
+    )
 
 
 @bridge.operation(
@@ -174,7 +208,7 @@ def answer_message(message, extra_data):
 
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s - %(levelname)s [%(filename)s] %(message)s")
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     bridge.endpoint = config.get_bridge_endpoint()
     bridge.on_ready = BOT.start
