@@ -67,6 +67,7 @@ bridge = PlazaBridge(
     is_public=True,
     events=["on_new_message"],
     icon=assets.open_icon(),
+    allow_multiple_connections=False,
 )
 
 REGISTERER = Registerer(bot=BOT, bridge=bridge)
@@ -135,11 +136,12 @@ def on_new_message(update):
         STORAGE.add_user_to_room(user, room, room_name=chat_name)
 
         # And send the event notifying this message's reception
-        on_new_message_event.send(
-            to_user=STORAGE.get_plaza_user_from_telegram(user),
-            content=update.message.text,
-            event=update.to_dict(),
-        )
+        for plaza_user in STORAGE.get_plaza_users_from_telegram(user):
+            on_new_message_event.send(
+                to_user=plaza_user,
+                content=update.message.text,
+                event=update.to_dict(),
+            )
 
 
 BOT.on_message = on_new_message
@@ -206,7 +208,7 @@ def answer_message(message, extra_data):
 
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s - %(levelname)s [%(filename)s] %(message)s")
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     bridge.endpoint = config.get_bridge_endpoint()
     bridge.on_ready = BOT.start

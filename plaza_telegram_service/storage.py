@@ -44,7 +44,7 @@ class StorageEngine:
             ).fetchone()
             return result is not None
 
-    def get_plaza_user_from_telegram(self, user_id):
+    def get_plaza_users_from_telegram(self, user_id):
         with self._connect_db() as conn:
             join = (sqlalchemy.join(models.PlazaUsers, models.PlazaUsersInTelegram,
                                     models.PlazaUsers.c.id
@@ -52,17 +52,15 @@ class StorageEngine:
                     .join(models.TelegramUsers,
                           models.PlazaUsersInTelegram.c.telegram_id == models.TelegramUsers.c.id))
 
-            result = conn.execute(
+            results = conn.execute(
                 sqlalchemy.select([
                     models.PlazaUsers.c.plaza_user_id,
                 ])
                 .select_from(join)
                 .where(models.TelegramUsers.c.telegram_user_id == user_id)
-            ).fetchone()
+            ).fetchall()
 
-            if result is None:
-                raise Exception('User (telegram: {}) not found'.format(user_id))
-            return result.plaza_user_id
+            return map(lambda result: result.plaza_user_id, results)
 
     def register_user(self, telegram_user, plaza_user):
         with self._connect_db() as conn:
