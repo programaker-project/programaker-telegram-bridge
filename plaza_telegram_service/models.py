@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, MetaData, Column, ForeignKey, UniqueConstraint, Table, Text,
+    Column, BigInteger, Integer, String, MetaData, Column, ForeignKey, UniqueConstraint, Table, Text,
 )
 
 metadata = MetaData()
@@ -7,12 +7,12 @@ metadata = MetaData()
 TelegramUsers = Table(
     'TELEGRAM_USERS', metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('telegram_user_id', Integer))
+    Column('telegram_user_id', BigInteger))
 
 TelegramRooms = Table(
     'TELEGRAM_ROOMS', metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('telegram_room_id', Integer, unique=True),
+    Column('telegram_room_id', BigInteger, unique=True),
     Column('room_name', Text))
 
 TelegramUsersInRooms = Table(
