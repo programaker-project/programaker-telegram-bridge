@@ -151,7 +151,7 @@ def check_message_for_registration(update, user, room):
     msg = update.message.text
 
     prefix = "/register "
-    if msg.startswith(prefix):
+    if msg and msg.startswith(prefix):
         register_id = msg[len(prefix):]
         if REGISTERER.perform_side_authentication(register_id, update.message.from_user.name):
             STORAGE.register_user(user, register_id)
