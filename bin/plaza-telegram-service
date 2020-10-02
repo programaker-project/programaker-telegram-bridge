@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
+import logging
+import os
+import traceback
+
 from plaza_telegram_service import (
     TelegramBot,
     config,
     storage,
     assets,
 )
-import logging
-import os
-import traceback
 
 from plaza_bridge import (
     PlazaBridge,
@@ -16,6 +17,7 @@ from plaza_bridge import (
     BlockContext,
     BlockArgument,
     CallbackBlockArgument,
+    CollectionBlockArgument,
     VariableBlockArgument,
 )
 
@@ -65,7 +67,8 @@ STORAGE = storage.get_engine()
 bridge = PlazaBridge(
     name="Telegram",
     is_public=True,
-    events=["on_new_message"],
+    events=["on_new_message", 'on_new_message_from_channel'],
+    collections=['channels'],
     icon=assets.open_icon(),
     allow_multiple_connections=False,
 )
@@ -74,18 +77,41 @@ REGISTERER = Registerer(bot=BOT, bridge=bridge)
 bridge.registerer = REGISTERER
 
 # Define events
+CHANNEL_COLLECTION = bridge.collections.channels
 on_new_message_event = bridge.events.on_new_message
 on_new_message_event.add_trigger_block(
     id="on_new_message",
-    message="When received any message. Set %1",
+    message="When I say something in any channel. Set %1",
     arguments=[VariableBlockArgument()],
     save_to=BlockContext.ARGUMENTS[0],
 )
 on_new_message_event.add_trigger_block(
     id="on_command",
-    message="When received %1",
+    message="When I say %1 in any channel",
     arguments=[BlockArgument(str, "/start")],
     expected_value=BlockContext.ARGUMENTS[0],
+)
+
+on_new_message_from_channel_event = bridge.events.on_new_message_from_channel
+on_new_message_from_channel_event.add_trigger_block(
+    id="on_new_message_from_channel",
+    message="On message on %1. Set %2",
+    arguments=[
+        CollectionBlockArgument(CHANNEL_COLLECTION),
+        VariableBlockArgument()
+    ],
+    subkey=BlockContext.ARGUMENTS[0],
+    save_to=BlockContext.ARGUMENTS[1],
+)
+on_new_message_from_channel_event.add_trigger_block(
+    id="on_command_from_channel",
+    message="When received %1 on %2",
+    arguments=[
+        BlockArgument(str, "/start"),
+        CollectionBlockArgument(CHANNEL_COLLECTION)
+    ],
+    expected_value=BlockContext.ARGUMENTS[0],
+    subkey=BlockContext.ARGUMENTS[1],
 )
 
 # Define helper function
@@ -98,14 +124,14 @@ def get_chat_name(chat):
     return "chat-{}".format(chat.id)
 
 
-@bridge.callback
-def get_known_channels(extra_data):
+@CHANNEL_COLLECTION.getter
+def get_known_channels(user_id, extra_data):
     results = {}
     for (
         _telegram_user,
         telegram_room_id,
         telegram_room_name,
-    ) in STORAGE.get_telegram_rooms_for_plaza_user(extra_data.user_id):
+    ) in STORAGE.get_telegram_rooms_for_plaza_user(user_id):
         results[telegram_room_id] = {"name": telegram_room_name}
     return results
 
@@ -142,6 +168,12 @@ def on_new_message(update):
                 content=update.message.text,
                 event=update.to_dict(),
             )
+            on_new_message_from_channel_event.send(
+                to_user=plaza_user,
+                content=update.message.text,
+                event=update.to_dict(),
+                subkey=str(room),
+            )
 
 
 BOT.on_message = on_new_message
@@ -176,7 +208,7 @@ def on_non_registered_event(user, room, update):
     id="send_message",
     message="On channel %1 say %2",
     arguments=[
-        CallbackBlockArgument(str, get_known_channels),
+        CollectionBlockArgument(CHANNEL_COLLECTION),
         BlockArgument(str, "Hello"),
     ],
 )
@@ -218,4 +250,4 @@ if __name__ == "__main__":
         traceback.print_exc()
         os._exit(1)
 
-    os._exit(0)  # Force stopping after the bridge ends
+    os._exit(1)  # Force stopping after the bridge ends
