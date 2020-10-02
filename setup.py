@@ -13,5 +13,6 @@ setup(name='plaza-telegram-service',
           'python-telegram-bot',
           'plaza-bridge',
           'xdg',
+          'sqlalchemy',
       ],
       zip_safe=False)
