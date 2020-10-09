@@ -8,10 +8,12 @@ TELEGRAM_BOT_NAME_ENV = 'TELEGRAM_BOT_NAME'
 PLAZA_BRIDGE_ENDPOINT_ENV = 'PLAZA_BRIDGE_ENDPOINT'
 MAINTAINER_TELEGRAM_HANDLE_ENV = 'MAINTAINER_TELEGRAM_HANDLE'
 DEFAULT_MAINTAINER_TELEGRAM_HANDLE = 'kenkeiras'
+PLAZA_AUTH_TOKEN_ENV = 'PLAZA_BRIDGE_AUTH_TOKEN'
 
 TELEGRAM_BOT_TOKEN_INDEX = 'telegram_bot_token'
 TELEGRAM_BOT_NAME_INDEX = 'telegram_bot_name'
 PLAZA_BRIDGE_ENDPOINT_INDEX = 'plaza_bridge_endpoint'
+PLAZA_AUTH_TOKEN_INDEX = 'plaza_authentication_token'
 
 global directory, config_file
 directory = os.path.join(XDG_CONFIG_HOME, 'plaza', 'bridges', 'telegram')
@@ -81,3 +83,17 @@ def get_bridge_endpoint():
 
 def get_maintainer_telegram_handle():
     return os.getenv(MAINTAINER_TELEGRAM_HANDLE_ENV, DEFAULT_MAINTAINER_TELEGRAM_HANDLE)
+
+
+def get_auth_token():
+    env_val = os.getenv(PLAZA_AUTH_TOKEN_ENV, None)
+    if env_val is not None:
+        return env_val
+
+    config = _get_config()
+    if config.get(PLAZA_AUTH_TOKEN_INDEX, None) is None:
+        config[PLAZA_AUTH_TOKEN_INDEX] = input('Plaza authentication TOKEN: ')
+        if not config[PLAZA_AUTH_TOKEN_INDEX]:
+            raise Exception('No authentication token introduced')
+        _save_config(config)
+    return config[PLAZA_AUTH_TOKEN_INDEX]
