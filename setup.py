@@ -11,7 +11,7 @@ setup(name='plaza-telegram-service',
       include_package_data=True,
       install_requires=[
           'python-telegram-bot',
-          'plaza-bridge',
+          'programaker-bridge',
           'xdg',
           'sqlalchemy',
       ],

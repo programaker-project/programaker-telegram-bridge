@@ -60,6 +60,7 @@ class Registerer(MessageBasedServiceRegistration):
 
 bot_token = config.get_bot_token()
 bot_name = config.get_bot_name()
+AUTH_TOKEN = config.get_auth_token()
 
 BOT = TelegramBot(bot_token, bot_name)
 STORAGE = storage.get_engine()
@@ -70,6 +71,7 @@ bridge = PlazaBridge(
     events=["on_new_message", 'on_new_message_from_channel'],
     collections=['channels'],
     icon=assets.open_icon(),
+    token=AUTH_TOKEN,
     allow_multiple_connections=False,
 )
 

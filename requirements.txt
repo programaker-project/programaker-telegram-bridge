@@ -1,5 +1,5 @@
-# Plaza
-plaza-bridge
+# Programaker
+programaker-bridge
 
 # Telegram
 python-telegram-bot
