@@ -1,7 +1,7 @@
 image: docker:latest
 
 variables:
-  DOCKER_IMAGE: plaza-telegram-bridge
+  DOCKER_IMAGE: programaker-telegram-bridge
 
 services:
   - docker:dind
@@ -11,8 +11,8 @@ build_and_push:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - docker build -t $DOCKER_IMAGE .
-    - docker tag $DOCKER_IMAGE "$CI_REGISTRY"/plaza-project/bridges/telegram-bridge:$CI_COMMIT_SHA
-    - docker push  "$CI_REGISTRY"/plaza-project/bridges/telegram-bridge:$CI_COMMIT_SHA
+    - docker tag $DOCKER_IMAGE "$CI_REGISTRY"/programaker-project/bridges/telegram-bridge:$CI_COMMIT_SHA
+    - docker push  "$CI_REGISTRY"/programaker-project/bridges/telegram-bridge:$CI_COMMIT_SHA
   only:
     - develop
     - master

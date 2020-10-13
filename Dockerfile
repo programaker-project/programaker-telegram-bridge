@@ -12,4 +12,4 @@ RUN pip install -e /app
 # Bridge database (registrations, chatrooms, ...)
 VOLUME /root/.local/share/plaza/bridges/telegram/db.sqlite
 
-CMD plaza-telegram-service
+CMD programaker-telegram-service

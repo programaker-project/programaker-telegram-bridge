@@ -6,7 +6,12 @@ import sqlalchemy
 
 from . import models
 
-DB_PATH_ENV = 'PLAZA_TELEGRAM_BRIDGE_DB_PATH'
+
+DB_PATH_ENV = 'TELEGRAM_BRIDGE_DB_PATH'
+
+if os.getenv(DB_PATH_ENV, None) is None:
+    # Support old environment variable
+    DB_PATH_ENV = 'PLAZA_TELEGRAM_BRIDGE_DB_PATH'
 
 if os.getenv(DB_PATH_ENV, None) is None:
     _DATA_DIRECTORY = os.path.join(XDG_DATA_HOME, "plaza", "bridges", "telegram")
@@ -44,7 +49,7 @@ class StorageEngine:
             ).fetchone()
             return result is not None
 
-    def get_plaza_users_from_telegram(self, user_id):
+    def get_programaker_users_from_telegram(self, user_id):
         with self._connect_db() as conn:
             join = (sqlalchemy.join(models.PlazaUsers, models.PlazaUsersInTelegram,
                                     models.PlazaUsers.c.id
@@ -62,23 +67,23 @@ class StorageEngine:
 
             return map(lambda result: result.plaza_user_id, results)
 
-    def register_user(self, telegram_user, plaza_user):
+    def register_user(self, telegram_user, programaker_user):
         with self._connect_db() as conn:
             telegram_id = self._get_or_add_telegram_user(conn, telegram_user)
-            plaza_id = self._get_or_add_plaza_user(conn, plaza_user)
+            programaker_id = self._get_or_add_programaker_user(conn, programaker_user)
 
             check = conn.execute(
                 sqlalchemy.select([models.PlazaUsersInTelegram.c.plaza_id])
                 .where(
                     sqlalchemy.and_(
-                        models.PlazaUsersInTelegram.c.plaza_id == plaza_id,
+                        models.PlazaUsersInTelegram.c.plaza_id == programaker_id,
                         models.PlazaUsersInTelegram.c.telegram_id == telegram_id))
             ).fetchone()
 
             if check is not None:
                 return
 
-            insert = models.PlazaUsersInTelegram.insert().values(plaza_id=plaza_id,
+            insert = models.PlazaUsersInTelegram.insert().values(plaza_id=programaker_id,
                                                                  telegram_id=telegram_id)
             conn.execute(insert)
 
@@ -102,9 +107,9 @@ class StorageEngine:
                                                                  room_id=room_id)
             conn.execute(insert)
 
-    def get_telegram_users(self, plaza_user):
+    def get_telegram_users(self, programaker_user):
         with self._connect_db() as conn:
-            plaza_id = self._get_or_add_plaza_user(conn, plaza_user)
+            programaker_id = self._get_or_add_programaker_user(conn, programaker_user)
             join = sqlalchemy.join(models.TelegramUsers, models.PlazaUsersInTelegram,
                                    models.TelegramUsers.c.id
                                    == models.PlazaUsersInTelegram.c.telegram_id)
@@ -114,7 +119,7 @@ class StorageEngine:
                     models.TelegramUsers.c.telegram_user_id,
                 ])
                 .select_from(join)
-                .where(models.PlazaUsersInTelegram.c.plaza_id == plaza_id)
+                .where(models.PlazaUsersInTelegram.c.plaza_id == programaker_id)
             ).fetchall()
 
             return [
@@ -122,9 +127,9 @@ class StorageEngine:
                 for row in results
             ]
 
-    def get_telegram_rooms_for_plaza_user(self, plaza_user):
+    def get_telegram_rooms_for_programaker_user(self, programaker_user):
         with self._connect_db() as conn:
-            plaza_id = self._get_or_add_plaza_user(conn, plaza_user)
+            programaker_id = self._get_or_add_programaker_user(conn, programaker_user)
 
             join = models.TelegramUsers.join(
                 models.PlazaUsersInTelegram,
@@ -144,7 +149,7 @@ class StorageEngine:
                     models.TelegramRooms.c.room_name,
                 ])
                 .select_from(join)
-                .where(models.PlazaUsersInTelegram.c.plaza_id == plaza_id)
+                .where(models.PlazaUsersInTelegram.c.plaza_id == programaker_id)
             ).fetchall()
             return results
 
@@ -176,16 +181,16 @@ class StorageEngine:
         result = conn.execute(insert)
         return result.inserted_primary_key[0]
 
-    def _get_or_add_plaza_user(self, conn, plaza_user):
+    def _get_or_add_programaker_user(self, conn, programaker_user):
         check = conn.execute(
             sqlalchemy.select([models.PlazaUsers.c.id])
-            .where(models.PlazaUsers.c.plaza_user_id == plaza_user)
+            .where(models.PlazaUsers.c.plaza_user_id == programaker_user)
         ).fetchone()
 
         if check is not None:
             return check.id
 
-        insert = models.PlazaUsers.insert().values(plaza_user_id=plaza_user)
+        insert = models.PlazaUsers.insert().values(plaza_user_id=programaker_user)
         result = conn.execute(insert)
         return result.inserted_primary_key[0]
 

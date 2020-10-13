@@ -4,15 +4,15 @@ import logging
 import os
 import traceback
 
-from plaza_telegram_service import (
+from programaker_telegram_service import (
     TelegramBot,
     config,
     storage,
     assets,
 )
 
-from plaza_bridge import (
-    PlazaBridge,
+from programaker_bridge import (
+    ProgramakerBridge,
     MessageBasedServiceRegistration,
     BlockContext,
     BlockArgument,
@@ -65,7 +65,7 @@ AUTH_TOKEN = config.get_auth_token()
 BOT = TelegramBot(bot_token, bot_name)
 STORAGE = storage.get_engine()
 
-bridge = PlazaBridge(
+bridge = ProgramakerBridge(
     name="Telegram",
     is_public=True,
     events=["on_new_message", 'on_new_message_from_channel'],
@@ -133,7 +133,7 @@ def get_known_channels(user_id, extra_data):
         _telegram_user,
         telegram_room_id,
         telegram_room_name,
-    ) in STORAGE.get_telegram_rooms_for_plaza_user(user_id):
+    ) in STORAGE.get_telegram_rooms_for_programaker_user(user_id):
         results[telegram_room_id] = {"name": telegram_room_name}
     return results
 
@@ -164,14 +164,14 @@ def on_new_message(update):
         STORAGE.add_user_to_room(user, room, room_name=chat_name)
 
         # And send the event notifying this message's reception
-        for plaza_user in STORAGE.get_plaza_users_from_telegram(user):
+        for programaker_user in STORAGE.get_programaker_users_from_telegram(user):
             on_new_message_event.send(
-                to_user=plaza_user,
+                to_user=programaker_user,
                 content=update.message.text,
                 event=update.to_dict(),
             )
             on_new_message_from_channel_event.send(
-                to_user=plaza_user,
+                to_user=programaker_user,
                 content=update.message.text,
                 event=update.to_dict(),
                 subkey=str(room),

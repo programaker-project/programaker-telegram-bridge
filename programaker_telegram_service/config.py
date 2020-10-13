@@ -5,15 +5,15 @@ from xdg import XDG_CONFIG_HOME
 
 TELEGRAM_BOT_TOKEN_ENV = 'TELEGRAM_BOT_TOKEN'
 TELEGRAM_BOT_NAME_ENV = 'TELEGRAM_BOT_NAME'
-PLAZA_BRIDGE_ENDPOINT_ENV = 'PLAZA_BRIDGE_ENDPOINT'
+BRIDGE_ENDPOINT_ENV = 'PLAZA_BRIDGE_ENDPOINT'
 MAINTAINER_TELEGRAM_HANDLE_ENV = 'MAINTAINER_TELEGRAM_HANDLE'
 DEFAULT_MAINTAINER_TELEGRAM_HANDLE = 'kenkeiras'
-PLAZA_AUTH_TOKEN_ENV = 'PLAZA_BRIDGE_AUTH_TOKEN'
+AUTH_TOKEN_ENV = 'PLAZA_BRIDGE_AUTH_TOKEN'
 
 TELEGRAM_BOT_TOKEN_INDEX = 'telegram_bot_token'
 TELEGRAM_BOT_NAME_INDEX = 'telegram_bot_name'
-PLAZA_BRIDGE_ENDPOINT_INDEX = 'plaza_bridge_endpoint'
-PLAZA_AUTH_TOKEN_INDEX = 'plaza_authentication_token'
+BRIDGE_ENDPOINT_INDEX = 'plaza_bridge_endpoint'
+AUTH_TOKEN_INDEX = 'plaza_authentication_token'
 
 global directory, config_file
 directory = os.path.join(XDG_CONFIG_HOME, 'plaza', 'bridges', 'telegram')
@@ -67,18 +67,18 @@ def get_bot_name():
 
 def get_bridge_endpoint():
     # Check if the bridge endpoint is defined in an environment variable
-    plaza_bridge_endpoint_env = os.getenv(PLAZA_BRIDGE_ENDPOINT_ENV, None)
-    if plaza_bridge_endpoint_env is not None:
-        return plaza_bridge_endpoint_env
+    programaker_bridge_endpoint_env = os.getenv(BRIDGE_ENDPOINT_ENV, None)
+    if programaker_bridge_endpoint_env is not None:
+        return programaker_bridge_endpoint_env
 
     # If not, request it and save it to a file
     config = _get_config()
-    if config.get(PLAZA_BRIDGE_ENDPOINT_INDEX, None) is None:
-        config[PLAZA_BRIDGE_ENDPOINT_INDEX] = input('Plaza bridge endpoint: ')
-        if not config[PLAZA_BRIDGE_ENDPOINT_INDEX]:
+    if config.get(BRIDGE_ENDPOINT_INDEX, None) is None:
+        config[BRIDGE_ENDPOINT_INDEX] = input('Programaker bridge endpoint: ')
+        if not config[BRIDGE_ENDPOINT_INDEX]:
             raise Exception('No bridge endpoint introduced')
         _save_config(config)
-    return config[PLAZA_BRIDGE_ENDPOINT_INDEX]
+    return config[BRIDGE_ENDPOINT_INDEX]
 
 
 def get_maintainer_telegram_handle():
@@ -86,14 +86,14 @@ def get_maintainer_telegram_handle():
 
 
 def get_auth_token():
-    env_val = os.getenv(PLAZA_AUTH_TOKEN_ENV, None)
+    env_val = os.getenv(AUTH_TOKEN_ENV, None)
     if env_val is not None:
         return env_val
 
     config = _get_config()
-    if config.get(PLAZA_AUTH_TOKEN_INDEX, None) is None:
-        config[PLAZA_AUTH_TOKEN_INDEX] = input('Plaza authentication TOKEN: ')
-        if not config[PLAZA_AUTH_TOKEN_INDEX]:
+    if config.get(AUTH_TOKEN_INDEX, None) is None:
+        config[AUTH_TOKEN_INDEX] = input('Programaker authentication TOKEN: ')
+        if not config[AUTH_TOKEN_INDEX]:
             raise Exception('No authentication token introduced')
         _save_config(config)
-    return config[PLAZA_AUTH_TOKEN_INDEX]
+    return config[AUTH_TOKEN_INDEX]
